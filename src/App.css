@@ -36,3 +36,20 @@
     transform: rotate(360deg);
   }
 }
+
+.tableInlineInput {
+  width: 80px;
+}
+
+.stickyColumn {
+  position: -webkit-sticky;
+  position: sticky;
+  background-color: white;
+}
+
+.firstColumn {
+  width: 100px;
+  min-width: 100px;
+  max-width: 100px;
+  left: 0px;
+}
