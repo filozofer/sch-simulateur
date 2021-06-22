@@ -123,7 +123,7 @@ function App() {
 
         // L'année de sortie, on rembourse le sortant avec l'apport de l'habitant entrant
         let montantRembourseApportEntrant = 0
-        if(habitant.anneeSortie === annee) {
+        if(habitant.anneeSortie === annee && habitant.remboursementParHabitantEntrant) {
           montantRembourseApportEntrant = habitant.remboursementParHabitantEntrant
         }
 
