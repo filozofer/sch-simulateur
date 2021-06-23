@@ -14,28 +14,21 @@ function App() {
   // Init
   const hiddenFileImportInputRef = React.useRef(null)
 
-  // Variable d'ajustement
-  const [montantParDefautRedevance, setMontantParDefautRedevance] = useState(700)
-  const [dureeSimulation, setDureeSimulation] = useState(20)
-  const [pourcentageReserveHabitants, setPourcentageReserveHabitants] = useState(20)
-  const [pourcentagePartAcquisitive, setPourcentagePartAcquisitive] = useState(100)
+  // Configuration simulateur
+  const [dureeSimulation, setDureeSimulation] = useState(40)
+  const [dureePret, setDureePret] = useState(20)
 
-  // Variable UI
-  const [montrerDifference, setMontrerDifference] = useState(false)
+  // Valeur par défaut ajout habitant
+  const [ccaInitialParDefaut, setCcaInitialParDefaut] = useState(50000)
+  const [pourcentageDonProjetPretEnCoursParDefaut, setPourcentageDonProjetPretEnCoursParDefaut] = useState(5)
+  const [pourcentageReserveHabitantPretEnCoursParDefaut, setPourcentageReserveHabitantPretEnCoursParDefaut] = useState(15)
+  const [redevanceAcquisitivePretEnCoursParDefaut, setRedevanceAcquisitivePretEnCoursParDefaut] = useState(890)
+  const [pourcentageDonProjetPretTermineParDefaut, setPourcentageDonProjetPretTermineParDefaut] = useState(20)
+  const [pourcentageReserveHabitantPretTermineParDefaut, setPourcentageReserveHabitantPretTermineParDefaut] = useState(100)
+  const [redevanceAcquisitivePretTermineParDefaut, setRedevanceAcquisitivePretTermineParDefaut] = useState(180)
 
   // Etat simulation
-  const [etatInitialHabitants, setEtatInitialHabitants] = useState([
-    /*{ id: 1, nom: 'Maxime', redevance: montantParDefautRedevance, cca: 0, anneeEntree: 0, anneeSortie: null, reliquatSortie: null },
-    { id: 2, nom: 'Stéphanie', redevance: montantParDefautRedevance, cca: 0, anneeEntree: 0, anneeSortie: null, reliquatSortie: null },
-    { id: 3, nom: 'Régis', redevance: montantParDefautRedevance, cca: 0, anneeEntree: 0, anneeSortie: 5, reliquatSortie: null },
-    { id: 4, nom: 'Nicole', redevance: montantParDefautRedevance, cca: 0, anneeEntree: 0, anneeSortie: 7, reliquatSortie: null },
-    { id: 5, nom: 'Gaetan', redevance: montantParDefautRedevance, cca: 0, anneeEntree: 0, anneeSortie: 5, reliquatSortie: null },
-    { id: 6, nom: 'Blandine', redevance: montantParDefautRedevance, cca: 0, anneeEntree: 0, anneeSortie: null, reliquatSortie: null },
-    { id: 7, nom: 'Benoit', redevance: montantParDefautRedevance, cca: 0, anneeEntree: 0, anneeSortie: null, reliquatSortie: null },
-    { id: 8, nom: 'François', redevance: montantParDefautRedevance, cca: 0, anneeEntree: 5, anneeSortie: null, reliquatSortie: null },
-    { id: 9, nom: 'Julie', redevance: montantParDefautRedevance, cca: 0, anneeEntree: 7, anneeSortie: null, reliquatSortie: null },
-    { id: 10, nom: 'Romain', redevance: montantParDefautRedevance, cca: 0, anneeEntree: 5, anneeSortie: null, reliquatSortie: null },*/
-  ])
+  const [etatInitialHabitants, setEtatInitialHabitants] = useState([])
   let [simulationReserveHabitants, setSimulationReserveHabitants] = useState([])
   let [simulationHabitants, setSimulationHabitants] = useState({})
 
@@ -65,18 +58,24 @@ function App() {
           }
 
           // Simulation ajout montant en CCA
-          let montantPreterCetteAnnee = habitant.redevance * 12 * pourcentagePartAcquisitive / 100
+          habitant.anneeEntree = habitant.anneeEntree ? habitant.anneeEntree : 0
+          let redevanceHabitant = annee - habitant.anneeEntree <= dureePret ? habitant.redevanceAcquisitivePretEnCours : habitant.redevanceAcquisitivePretTermine
+          let pourcentageDonProjet = annee - habitant.anneeEntree <= dureePret ? habitant.pourcentageDonProjetPretEnCours : habitant.pourcentageDonProjetPretTermine
+          let montantPreterCetteAnnee = redevanceHabitant * 12
+          let montantAcquisCetteAnneeEnCCA = montantPreterCetteAnnee - (montantPreterCetteAnnee * pourcentageDonProjet / 100)
           let montantAnneePrecedenteCCA = habitant.cca
           sHabitants[habitant.id].push({
             annee: annee,
-            difference: montantPreterCetteAnnee,
-            cca: montantAnneePrecedenteCCA + montantPreterCetteAnnee
+            difference: montantAcquisCetteAnneeEnCCA,
+            cca: montantAnneePrecedenteCCA + montantAcquisCetteAnneeEnCCA
           })
-          habitant.cca = montantAnneePrecedenteCCA + montantPreterCetteAnnee
+          habitant.cca = montantAnneePrecedenteCCA + montantAcquisCetteAnneeEnCCA
 
           // Simulation ajout montant reserve habitant
-          montantAjouterCetteAnneeEnveloppeHabitant += habitant.redevance * 12 * pourcentageReserveHabitants / 100
-          historiqueEnveloppeHabitant.push({ nom: habitant.nom, difference: montantAjouterCetteAnneeEnveloppeHabitant })
+          let pourcentageReserveHabitants = annee <= dureePret ? habitant.pourcentageReserveHabitantPretEnCours : habitant.pourcentageReserveHabitantPretTermine
+          let montantAjouterCetteAnneeParCetHabitant = montantPreterCetteAnnee * pourcentageReserveHabitants / 100;
+          montantAjouterCetteAnneeEnveloppeHabitant += montantAjouterCetteAnneeParCetHabitant
+          historiqueEnveloppeHabitant.push({ nom: habitant.nom, difference: montantAjouterCetteAnneeParCetHabitant })
 
         })
 
@@ -148,6 +147,8 @@ function App() {
       let differenceReserveHabitantPourCetteAnnee = montantAjouterCetteAnneeEnveloppeHabitant - montantRembourseCetteAnneeEnveloppeHabitant
       sReserveHabitants.push({
         annee: annee,
+        ajout: montantAjouterCetteAnneeEnveloppeHabitant,
+        remboursement: montantRembourseCetteAnneeEnveloppeHabitant,
         difference: differenceReserveHabitantPourCetteAnnee,
         montant: montantEnveloppeHabitantAnneePrecedante + differenceReserveHabitantPourCetteAnnee,
         historique: historiqueEnveloppeHabitant
@@ -159,10 +160,13 @@ function App() {
     setSimulationHabitants(sHabitants)
     setSimulationReserveHabitants(sReserveHabitants)
 
+    // Log
+    console.log(sReserveHabitants)
+    console.log(sHabitants)
+
   }, [
     dureeSimulation,
-    pourcentageReserveHabitants,
-    pourcentagePartAcquisitive,
+    dureePret,
     etatInitialHabitants
   ])
 
@@ -173,22 +177,32 @@ function App() {
       d.push({
         id: newId,
         nom: 'Habitant ' + newId,
-        redevance: montantParDefautRedevance,
-        cca: 0,
         anneeEntree: 0,
         anneeSortie: null,
+        cca: ccaInitialParDefaut,
+        pourcentageDonProjetPretEnCours: pourcentageDonProjetPretEnCoursParDefaut,
+        pourcentageReserveHabitantPretEnCours: pourcentageReserveHabitantPretEnCoursParDefaut,
+        redevanceAcquisitivePretEnCours: redevanceAcquisitivePretEnCoursParDefaut,
+        pourcentageDonProjetPretTermine: pourcentageDonProjetPretTermineParDefaut,
+        pourcentageReserveHabitantPretTermine: pourcentageReserveHabitantPretTermineParDefaut,
+        redevanceAcquisitivePretTermine: redevanceAcquisitivePretTermineParDefaut,
         reliquatSortie: null
       })
     }))
   }
 
-  // Form validation schema
+  // Schéma de validation pour les configurations du simulateur
   const configurationSchema = Yup.object().shape({
-    montantParDefautRedevance: Yup.number().min(0).required(),
-    pourcentageReserveHabitants: Yup.number().min(1).max(100).required(),
-    pourcentagePartAcquisitive: Yup.number().min(1).max(100).required(),
     dureeSimulation: Yup.number().min(1).required(),
-    montrerDifference: Yup.boolean()
+    dureePret: Yup.number().min(1).required(),
+    montrerDifference: Yup.boolean(),
+    ccaInitialParDefaut: Yup.number().min(0).required(),
+    pourcentageDonProjetPretEnCoursParDefaut: Yup.number().min(0).max(100).required(),
+    pourcentageReserveHabitantPretEnCoursParDefaut: Yup.number().min(0).max(100).required(),
+    redevanceAcquisitivePretEnCoursParDefaut: Yup.number().min(0).required(),
+    pourcentageDonProjetPretTermineParDefaut: Yup.number().min(0).max(100).required(),
+    pourcentageReserveHabitantPretTermineParDefaut: Yup.number().min(0).max(100).required(),
+    redevanceAcquisitivePretTermineParDefaut: Yup.number().min(0).required()
   })
 
   // Export simulation to json
@@ -196,11 +210,15 @@ function App() {
 
     // Save data as json
     let dataStr = JSON.stringify({
-      montantParDefautRedevance: montantParDefautRedevance,
       dureeSimulation: dureeSimulation,
-      pourcentageReserveHabitants: pourcentageReserveHabitants,
-      pourcentagePartAcquisitive: pourcentagePartAcquisitive,
-      montrerDifference: montrerDifference,
+      dureePret: dureePret,
+      ccaInitialParDefaut: ccaInitialParDefaut,
+      pourcentageDonProjetPretEnCoursParDefaut: pourcentageDonProjetPretEnCoursParDefaut,
+      pourcentageReserveHabitantPretEnCoursParDefaut: pourcentageReserveHabitantPretEnCoursParDefaut,
+      redevanceAcquisitivePretEnCoursParDefaut: redevanceAcquisitivePretEnCoursParDefaut,
+      pourcentageDonProjetPretTermineParDefaut: pourcentageDonProjetPretTermineParDefaut,
+      pourcentageReserveHabitantPretTermineParDefaut: pourcentageReserveHabitantPretTermineParDefaut,
+      redevanceAcquisitivePretTermineParDefaut: redevanceAcquisitivePretTermineParDefaut,
       etatInitialHabitants: etatInitialHabitants
     }, null, 4)
 
@@ -225,20 +243,32 @@ function App() {
 
       // Import config
       const importedFile = JSON.parse(evt.target.result)
-      if(importedFile['montantParDefautRedevance']) {
-        setMontantParDefautRedevance(importedFile['montantParDefautRedevance'])
-      }
       if(importedFile['dureeSimulation']) {
         setDureeSimulation(importedFile['dureeSimulation'])
       }
-      if(importedFile['pourcentageReserveHabitants']) {
-        setPourcentageReserveHabitants(importedFile['pourcentageReserveHabitants'])
+      if(importedFile['dureePret']) {
+        setDureePret(importedFile['dureePret'])
       }
-      if(importedFile['pourcentagePartAcquisitive']) {
-        setPourcentagePartAcquisitive(importedFile['pourcentagePartAcquisitive'])
+      if(importedFile['ccaInitialParDefaut']) {
+        setCcaInitialParDefaut(importedFile['ccaInitialParDefaut'])
       }
-      if(importedFile['montrerDifference']) {
-        setMontrerDifference(importedFile['montrerDifference'])
+      if(importedFile['pourcentageDonProjetPretEnCoursParDefaut']) {
+        setPourcentageDonProjetPretEnCoursParDefaut(importedFile['pourcentageDonProjetPretEnCoursParDefaut'])
+      }
+      if(importedFile['pourcentageReserveHabitantPretEnCoursParDefaut']) {
+        setPourcentageReserveHabitantPretEnCoursParDefaut(importedFile['pourcentageReserveHabitantPretEnCoursParDefaut'])
+      }
+      if(importedFile['redevanceAcquisitivePretEnCoursParDefaut']) {
+        setRedevanceAcquisitivePretEnCoursParDefaut(importedFile['redevanceAcquisitivePretEnCoursParDefaut'])
+      }
+      if(importedFile['pourcentageDonProjetPretTermineParDefaut']) {
+        setPourcentageDonProjetPretTermineParDefaut(importedFile['pourcentageDonProjetPretTermineParDefaut'])
+      }
+      if(importedFile['pourcentageReserveHabitantPretTermineParDefaut']) {
+        setPourcentageReserveHabitantPretTermineParDefaut(importedFile['pourcentageReserveHabitantPretTermineParDefaut'])
+      }
+      if(importedFile['redevanceAcquisitivePretTermineParDefaut']) {
+        setRedevanceAcquisitivePretTermineParDefaut(importedFile['redevanceAcquisitivePretTermineParDefaut'])
       }
       if(importedFile['etatInitialHabitants']) {
         setEtatInitialHabitants(importedFile['etatInitialHabitants'])
@@ -259,21 +289,29 @@ function App() {
       {/* Config form */}
       <Formik
         initialValues={{
-          montantParDefautRedevance: montantParDefautRedevance,
-          pourcentageReserveHabitants: pourcentageReserveHabitants,
-          pourcentagePartAcquisitive: pourcentagePartAcquisitive,
           dureeSimulation: dureeSimulation,
-          montrerDifference: montrerDifference
+          dureePret: dureePret,
+          ccaInitialParDefaut: ccaInitialParDefaut,
+          pourcentageDonProjetPretEnCoursParDefaut: pourcentageDonProjetPretEnCoursParDefaut,
+          pourcentageReserveHabitantPretEnCoursParDefaut: pourcentageReserveHabitantPretEnCoursParDefaut,
+          redevanceAcquisitivePretEnCoursParDefaut: redevanceAcquisitivePretEnCoursParDefaut,
+          pourcentageDonProjetPretTermineParDefaut: pourcentageDonProjetPretTermineParDefaut,
+          pourcentageReserveHabitantPretTermineParDefaut: pourcentageReserveHabitantPretTermineParDefaut,
+          redevanceAcquisitivePretTermineParDefaut: redevanceAcquisitivePretTermineParDefaut
         }}
         enableReinitialize={true}
         validationSchema={configurationSchema}
         onSubmit={values => {
           // Save config
-          setMontantParDefautRedevance(values.montantParDefautRedevance)
-          setPourcentageReserveHabitants(values.pourcentageReserveHabitants)
-          setPourcentagePartAcquisitive(values.pourcentagePartAcquisitive)
           setDureeSimulation(values.dureeSimulation)
-          setMontrerDifference(values.montrerDifference)
+          setDureePret(values.dureePret)
+          setCcaInitialParDefaut(values.ccaInitialParDefaut)
+          setPourcentageDonProjetPretEnCoursParDefaut(values.pourcentageDonProjetPretEnCoursParDefaut)
+          setPourcentageReserveHabitantPretEnCoursParDefaut(values.pourcentageReserveHabitantPretEnCoursParDefaut)
+          setRedevanceAcquisitivePretEnCoursParDefaut(values.redevanceAcquisitivePretEnCoursParDefaut)
+          setPourcentageDonProjetPretTermineParDefaut(values.pourcentageDonProjetPretTermineParDefaut)
+          setPourcentageReserveHabitantPretTermineParDefaut(values.pourcentageReserveHabitantPretTermineParDefaut)
+          setRedevanceAcquisitivePretTermineParDefaut(values.redevanceAcquisitivePretTermineParDefaut)
         }}
       >
         {({
@@ -285,95 +323,170 @@ function App() {
         }) => (
           <form onSubmit={handleSubmit}>
 
-            {/* Montant Par Defaut Redevance Acquisitive */}
-            <div className={"form-group col-md-2"}>
-              <label>Montant par défaut redevance</label>
-              <input
-                className={'form-control'}
-                type="number"
-                name="montantParDefautRedevance"
-                onChange={handleChange}
-                onBlur={handleSubmit}
-                value={values.montantParDefautRedevance}
-              />
-              {errors.montantParDefautRedevance && touched.montantParDefautRedevance && errors.montantParDefautRedevance}
-            </div>
+            {/* Configuration simulateur et actions */}
+            <fieldset>
+              <legend>Configuration simulateur et actions</legend>
 
-            {/* Pourcentage Part Acquisitive */}
-            <div className={"form-group col-md-2"}>
-              <label>Pourcentage part acquisitive</label>
-              <input
-                className={'form-control'}
-                type="number"
-                name="pourcentagePartAcquisitive"
-                onChange={handleChange}
-                onBlur={handleSubmit}
-                value={values.pourcentagePartAcquisitive}
-              />
-              {errors.pourcentagePartAcquisitive && touched.pourcentagePartAcquisitive && errors.pourcentagePartAcquisitive}
-            </div>
+              {/* Duree Simulation */}
+              <div className={"form-group col-md-1"}>
+                <label>Durée simulation (en année)</label>
+                <input
+                  className={'form-control'}
+                  type="number"
+                  name="dureeSimulation"
+                  onChange={handleChange}
+                  onBlur={handleSubmit}
+                  value={values.dureeSimulation}
+                />
+                {errors.dureeSimulation && touched.dureeSimulation && errors.dureeSimulation}
+              </div>
 
-            {/* Pourcentage Reserve Habitants */}
-            <div className={"form-group col-md-2"}>
-              <label>Pourcentage réserve habitants</label>
-              <input
-                className={'form-control'}
-                type="number"
-                name="pourcentageReserveHabitants"
-                onChange={handleChange}
-                onBlur={handleSubmit}
-                value={values.pourcentageReserveHabitants}
-              />
-              {errors.pourcentageReserveHabitants && touched.pourcentageReserveHabitants && errors.pourcentageReserveHabitants}
-            </div>
+              {/* Duree Prêt */}
+              <div className={"form-group col-md-1"}>
+                <label>Durée prêt (en année)</label>
+                <input
+                  className={'form-control'}
+                  type="number"
+                  name="dureeSimulation"
+                  onChange={handleChange}
+                  onBlur={handleSubmit}
+                  value={values.dureePret}
+                />
+                {errors.dureePret && touched.dureePret && errors.dureePret}
+              </div>
 
-            {/* Duree Simulation */}
-            <div className={"form-group col-md-2"}>
-              <label>Durée Simulation</label>
-              <input
-                className={'form-control'}
-                type="number"
-                name="dureeSimulation"
-                onChange={handleChange}
-                onBlur={handleSubmit}
-                value={values.dureeSimulation}
-              />
-              {errors.dureeSimulation && touched.dureeSimulation && errors.dureeSimulation}
-            </div>
+              {/* Ajout habitant */}
+              <div className={"form-group col-md-1"}>
+                <button type="button" onClick={_ajouterNouveauHabitant}>
+                  Ajouter un habitant
+                </button>
+              </div>
 
-            {/* Montrer Difference */}
-            <div className={"form-group col-md-2"}>
-              <label>Montrer Difference</label>
-              <input
-                className={'form-control'}
-                type="checkbox"
-                name="montrerDifference"
-                onChange={handleChange}
-                onBlur={handleSubmit}
-                value={values.montrerDifference}
-                checked={values.montrerDifference && 'checked'}
-              />
-              {errors.montrerDifference && touched.montrerDifference && errors.montrerDifference}
-            </div>
+              {/* Export simulation */}
+              <div className={"form-group col-md-1"}>
+                <button type="button" onClick={_exportSimulation}>
+                  Exporter simulation
+                </button>
+              </div>
 
-            <button type="button" onClick={_ajouterNouveauHabitant}>
-              Ajouter un habitant
-            </button>
+              {/* Import simulation */}
+              <div className={"form-group col-md-1"}>
+                <button type="button" onClick={() => hiddenFileImportInputRef.current.click() }>
+                  Importer simulation
+                </button>
+                <input
+                  style={{display: 'none'}}
+                  ref={hiddenFileImportInputRef}
+                  type={'file'}
+                  onChange={_importSimulation}
+                />
+              </div>
 
-            <button type="button" onClick={_exportSimulation}>
-              Exporter simulation
-            </button>
+            </fieldset>
 
+            {/* Configuration simulateur et actions */}
+            <fieldset>
+              <legend>Valeurs par défaut quand ajout d'habitant</legend>
 
-            <button type="button" onClick={() => hiddenFileImportInputRef.current.click() }>
-              Importer simulation
-            </button>
-            <input
-              style={{display: 'none'}}
-              ref={hiddenFileImportInputRef}
-              type={'file'}
-              onChange={_importSimulation}
-            />
+              {/* CCA Initial */}
+              <div className={"form-group col-md-1"}>
+                <label className={'labelInputDefaultValueHabitant'}>CCA Initial</label>
+                <input
+                  className={'form-control'}
+                  type="number"
+                  name="ccaInitialParDefaut"
+                  onChange={handleChange}
+                  onBlur={handleSubmit}
+                  value={values.ccaInitialParDefaut}
+                />
+                {errors.ccaInitialParDefaut && touched.ccaInitialParDefaut && errors.ccaInitialParDefaut}
+              </div>
+
+              {/* Pourcentage don au projet prêt en cours */}
+              <div className={"form-group col-md-1"}>
+                <label className={'labelInputDefaultValueHabitant'}>Pourcentage don au projet prêt en cours</label>
+                <input
+                  className={'form-control'}
+                  type="number"
+                  name="pourcentageDonProjetPretEnCoursParDefaut"
+                  onChange={handleChange}
+                  onBlur={handleSubmit}
+                  value={values.pourcentageDonProjetPretEnCoursParDefaut}
+                />
+                {errors.pourcentageDonProjetPretEnCoursParDefaut && touched.pourcentageDonProjetPretEnCoursParDefaut && errors.pourcentageDonProjetPretEnCoursParDefaut}
+              </div>
+
+              {/* Pourcentage réserve habitant prêt en cours */}
+              <div className={"form-group col-md-1"}>
+                <label className={'labelInputDefaultValueHabitant'}>Pourcentage réserve habitant prêt en cours</label>
+                <input
+                  className={'form-control'}
+                  type="number"
+                  name="pourcentageReserveHabitantPretEnCoursParDefaut"
+                  onChange={handleChange}
+                  onBlur={handleSubmit}
+                  value={values.pourcentageReserveHabitantPretEnCoursParDefaut}
+                />
+                {errors.pourcentageReserveHabitantPretEnCoursParDefaut && touched.pourcentageReserveHabitantPretEnCoursParDefaut && errors.pourcentageReserveHabitantPretEnCoursParDefaut}
+              </div>
+
+              {/* Redevance acquisitive prêt en cours */}
+              <div className={"form-group col-md-1"}>
+                <label className={'labelInputDefaultValueHabitant'}>Redevance acquisitive prêt en cours</label>
+                <input
+                  className={'form-control'}
+                  type="number"
+                  name="redevanceAcquisitivePretEnCoursParDefaut"
+                  onChange={handleChange}
+                  onBlur={handleSubmit}
+                  value={values.redevanceAcquisitivePretEnCoursParDefaut}
+                />
+                {errors.redevanceAcquisitivePretEnCoursParDefaut && touched.redevanceAcquisitivePretEnCoursParDefaut && errors.redevanceAcquisitivePretEnCoursParDefaut}
+              </div>
+
+              {/* Pourcentage don au projet prêt terminé */}
+              <div className={"form-group col-md-1"}>
+                <label className={'labelInputDefaultValueHabitant'}>Pourcentage don au projet prêt terminé</label>
+                <input
+                  className={'form-control'}
+                  type="number"
+                  name="pourcentageDonProjetPretTermineParDefaut"
+                  onChange={handleChange}
+                  onBlur={handleSubmit}
+                  value={values.pourcentageDonProjetPretTermineParDefaut}
+                />
+                {errors.pourcentageDonProjetPretTermineParDefaut && touched.pourcentageDonProjetPretTermineParDefaut && errors.pourcentageDonProjetPretTermineParDefaut}
+              </div>
+
+              {/* Pourcentage réserve habitant prêt terminé */}
+              <div className={"form-group col-md-1"}>
+                <label className={'labelInputDefaultValueHabitant'}>Pourcentage réserve habitant prêt terminé</label>
+                <input
+                  className={'form-control'}
+                  type="number"
+                  name="pourcentageReserveHabitantPretTermineParDefaut"
+                  onChange={handleChange}
+                  onBlur={handleSubmit}
+                  value={values.pourcentageReserveHabitantPretTermineParDefaut}
+                />
+                {errors.pourcentageReserveHabitantPretTermineParDefaut && touched.pourcentageReserveHabitantPretTermineParDefaut && errors.pourcentageReserveHabitantPretTermineParDefaut}
+              </div>
+
+              {/* Redevance acquisitive prêt terminé */}
+              <div className={"form-group col-md-1"}>
+                <label className={'labelInputDefaultValueHabitant'}>Redevance acquisitive prêt terminé</label>
+                <input
+                  className={'form-control'}
+                  type="number"
+                  name="redevanceAcquisitivePretTermineParDefaut"
+                  onChange={handleChange}
+                  onBlur={handleSubmit}
+                  value={values.redevanceAcquisitivePretTermineParDefaut}
+                />
+                {errors.redevanceAcquisitivePretTermineParDefaut && touched.redevanceAcquisitivePretTermineParDefaut && errors.redevanceAcquisitivePretTermineParDefaut}
+              </div>
+
+            </fieldset>
 
           </form>
         )}
@@ -384,131 +497,183 @@ function App() {
         {/* Entetes tableau */}
         <thead>
           <tr>
-            <th colSpan={6}> </th>
+            <th colSpan={11}> </th>
             {simulationReserveHabitants.map(simulationAnnee => (
-              <th key={simulationAnnee.annee} colSpan={2}>Année {simulationAnnee.annee}</th>
+              <th key={simulationAnnee.annee}>Année {simulationAnnee.annee}</th>
             ))}
           </tr>
           <tr>
-            <th colSpan={2}> </th>
+            <th> </th>
+            <th>Nom</th>
             <th>Année entrée</th>
             <th>Année sortie</th>
             <th>CCA Initial</th>
-            <th>Redevance</th>
+            <th>% don au projet durée prêt</th>
+            <th>% reserve habitants prêt en cours</th>
+            <th>Redevance acquisitive durée prêt</th>
+            <th>% don au projet durée prêt</th>
+            <th>% reserve habitants prêt terminé</th>
+            <th>Redevance acquisitive durée prêt</th>
             {simulationReserveHabitants.map(simulationAnnee => (
-              <React.Fragment key={simulationAnnee.annee}>
-                {montrerDifference && <th>Diff.</th>}
-                <th colSpan={montrerDifference ? 1 : 2}>Montant</th>
-              </React.Fragment>
+              <th key={simulationAnnee.annee}>Montant</th>
             ))}
           </tr>
         </thead>
 
-        {/* Evolution enveloppe habitant */}
+        {/* Table body */}
         <tbody>
+
+          {/* Evolution enveloppe habitant */}
           <tr>
             <th colSpan={2} className={'stickyColumn firstColumn'}>Enveloppe habitant</th>
-            <th colSpan={4}> </th>
+            <th colSpan={9}> </th>
             {simulationReserveHabitants.map(simulationAnnee => (
-              <React.Fragment key={simulationAnnee.annee}>
-                {montrerDifference && (
-                  <td>{Math.ceil(simulationAnnee.difference)}</td>
-                )}
-                <td colSpan={montrerDifference ? 1 : 2}>
-                  {Math.ceil(simulationAnnee.montant)}
-                </td>
-              </React.Fragment>
+              <td key={simulationAnnee.annee}>
+                {Math.ceil(simulationAnnee.montant)}
+              </td>
             ))}
           </tr>
 
-          {/* Evolution CCA habitants */}
+          {/* Edition config habitant et evolution CCA habitants */}
           {etatInitialHabitants.map(habitant => (
-            <tr key={habitant.id}>
-              <th>{habitant.id}</th>
-              <th className={'stickyColumn firstColumn'}>{habitant.nom}</th>
-              <Formik
-                initialValues={habitant}
-                //enableReinitialize={true}
-                onSubmit={habitantModifier => {
-                  setEtatInitialHabitants(produce(etatInitialHabitants, draft => {
-                    let habitantIndex = etatInitialHabitants.findIndex(habitant => habitant.id === habitantModifier.id)
-                    draft[habitantIndex] = habitantModifier
-                  }))
-                }}
-              >
-                {({
-                  values,
-                  errors,
-                  touched,
-                  handleChange,
-                  handleSubmit
-                }) => (
-                  <>
-                    <th>
-                      <input
-                        className={'form-control tableInlineInput'}
-                        type={'number'}
-                        value={values.anneeEntree}
-                        name={'anneeEntree'}
-                        onChange={handleChange}
-                        onBlur={handleSubmit}
-                      />
-                    </th>
-                    <th>
-                      <input
-                        className={'form-control tableInlineInput'}
-                        type={'number'}
-                        value={values.anneeSortie}
-                        name={'anneeSortie'}
-                        onChange={handleChange}
-                        onBlur={handleSubmit}
-                      />
-                    </th>
-                    <th>
-                      <input
-                        className={'form-control tableInlineInput'}
-                        type={'number'}
-                        value={values.cca}
-                        name={'cca'}
-                        onChange={handleChange}
-                        onBlur={handleSubmit}
-                      />
-                    </th>
-                    <th>
-                      <input
-                        className={'form-control tableInlineInput'}
-                        type={'number'}
-                        value={values.redevance}
-                        name={'redevance'}
-                        onChange={handleChange}
-                        onBlur={handleSubmit}
-                      />
-                    </th>
-                  </>
-                )}
-              </Formik>
-
-              {simulationReserveHabitants.map(simulationAnnee => {
-                let simulationHabitant = simulationHabitants[habitant.id] && simulationHabitants[habitant.id].find(simulationAnneeHabitant => simulationAnneeHabitant.annee === simulationAnnee.annee)
-                if(simulationHabitant === undefined) {
-                  return <React.Fragment key={simulationAnnee.annee}><td> </td><td> </td></React.Fragment>
-                }
-                return (
-                  <React.Fragment key={simulationAnnee.annee}>
-                    {montrerDifference && (
-                      <td>{Math.ceil(simulationHabitant.difference)}</td>
-                    )}
-                    <td
-                      colSpan={montrerDifference ? 1 : 2}
-                      style={simulationHabitant.sortie && { color: 'green' }}
-                    >
-                      {Math.ceil(simulationHabitant.cca)}
-                    </td>
-                  </React.Fragment>
-                )
-              })}
-            </tr>
+            <Formik
+              key={habitant.id}
+              initialValues={habitant}
+              onSubmit={habitantModifier => {
+                setEtatInitialHabitants(produce(etatInitialHabitants, draft => {
+                  let habitantIndex = etatInitialHabitants.findIndex(habitant => habitant.id === habitantModifier.id)
+                  draft[habitantIndex] = habitantModifier
+                }))
+              }}
+            >
+              {({
+                values,
+                errors,
+                touched,
+                handleChange,
+                handleSubmit
+              }) => (
+                <tr>
+                  <th>{habitant.id}</th>
+                  <th className={'stickyColumn firstColumn'}>
+                    <input
+                      className={'form-control tableInlineInput tableInlineInputNom'}
+                      type={'string'}
+                      value={values.nom}
+                      name={'nom'}
+                      onChange={handleChange}
+                      onBlur={handleSubmit}
+                    />
+                  </th>
+                  <th>
+                    <input
+                      className={'form-control tableInlineInput'}
+                      type={'number'}
+                      value={values.anneeEntree}
+                      name={'anneeEntree'}
+                      onChange={handleChange}
+                      onBlur={handleSubmit}
+                    />
+                  </th>
+                  <th>
+                    <input
+                      className={'form-control tableInlineInput'}
+                      type={'number'}
+                      value={values.anneeSortie}
+                      name={'anneeSortie'}
+                      onChange={handleChange}
+                      onBlur={handleSubmit}
+                    />
+                  </th>
+                  <th>
+                    <input
+                      className={'form-control tableInlineInput'}
+                      type={'number'}
+                      value={values.cca}
+                      name={'cca'}
+                      onChange={handleChange}
+                      onBlur={handleSubmit}
+                    />
+                  </th>
+                  <th>
+                    <input
+                      className={'form-control tableInlineInput'}
+                      type={'number'}
+                      value={values.pourcentageDonProjetPretEnCours}
+                      name={'pourcentageDonProjetPretEnCours'}
+                      onChange={handleChange}
+                      onBlur={handleSubmit}
+                    />
+                  </th>
+                  <th>
+                    <input
+                      className={'form-control tableInlineInput'}
+                      type={'number'}
+                      value={values.pourcentageReserveHabitantPretEnCours}
+                      name={'pourcentageReserveHabitantPretEnCours'}
+                      onChange={handleChange}
+                      onBlur={handleSubmit}
+                    />
+                  </th>
+                  <th>
+                    <input
+                      className={'form-control tableInlineInput'}
+                      type={'number'}
+                      value={values.redevanceAcquisitivePretEnCours}
+                      name={'redevanceAcquisitivePretEnCours'}
+                      onChange={handleChange}
+                      onBlur={handleSubmit}
+                    />
+                  </th>
+                  <th>
+                    <input
+                      className={'form-control tableInlineInput'}
+                      type={'number'}
+                      value={values.pourcentageDonProjetPretTermine}
+                      name={'pourcentageDonProjetPretTermine'}
+                      onChange={handleChange}
+                      onBlur={handleSubmit}
+                    />
+                  </th>
+                  <th>
+                    <input
+                      className={'form-control tableInlineInput'}
+                      type={'number'}
+                      value={values.pourcentageReserveHabitantPretTermine}
+                      name={'pourcentageReserveHabitantPretTermine'}
+                      onChange={handleChange}
+                      onBlur={handleSubmit}
+                    />
+                  </th>
+                  <th>
+                    <input
+                      className={'form-control tableInlineInput'}
+                      type={'number'}
+                      value={values.redevanceAcquisitivePretTermine}
+                      name={'redevanceAcquisitivePretTermine'}
+                      onChange={handleChange}
+                      onBlur={handleSubmit}
+                    />
+                  </th>
+                  {simulationReserveHabitants.map(simulationAnnee => {
+                    let simulationHabitant = simulationHabitants[habitant.id] && simulationHabitants[habitant.id].find(simulationAnneeHabitant => simulationAnneeHabitant.annee === simulationAnnee.annee)
+                    if(simulationHabitant === undefined) {
+                      return <td key={simulationAnnee.annee}> </td>
+                    }
+                    return (
+                      <td
+                        key={simulationAnnee.annee}
+                        style={simulationHabitant.sortie && { color: 'green' }}
+                      >
+                        {Math.ceil(simulationHabitant.cca)}
+                      </td>
+                    )
+                  })}
+                </tr>
+              )}
+            </Formik>
           ))}
+
         </tbody>
 
       </table>

@@ -40,6 +40,9 @@
 .tableInlineInput {
   width: 100px;
 }
+.tableInlineInputNom {
+  width: 130px;
+}
 
 .stickyColumn {
   position: -webkit-sticky;
@@ -48,8 +51,12 @@
 }
 
 .firstColumn {
-  width: 100px;
-  min-width: 100px;
-  max-width: 100px;
+  width: 150px;
+  min-width: 150px;
+  max-width: 150px;
   left: 0px;
+}
+
+.labelInputDefaultValueHabitant {
+  height: 70px;
 }
