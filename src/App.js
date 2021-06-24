@@ -192,7 +192,7 @@ function App() {
   }
 
   // Schéma de validation pour les configurations du simulateur
-  const configurationSchema = Yup.object().shape({
+  const configurationSimulateurSchema = Yup.object().shape({
     dureeSimulation: Yup.number().min(1).required(),
     dureePret: Yup.number().min(1).required(),
     montrerDifference: Yup.boolean(),
@@ -203,6 +203,20 @@ function App() {
     pourcentageDonProjetPretTermineParDefaut: Yup.number().min(0).max(100).required(),
     pourcentageReserveHabitantPretTermineParDefaut: Yup.number().min(0).max(100).required(),
     redevanceAcquisitivePretTermineParDefaut: Yup.number().min(0).required()
+  })
+
+  // Schéma de validation pour les configurations d'un habitant'
+  const configurationHabitantSchema = Yup.object().shape({
+    nom: Yup.string().required(),
+    anneeEntree: Yup.number().min(0).required(),
+    anneeSortie: Yup.number().nullable().optional().min(1),
+    cca: Yup.number().min(0).required(),
+    pourcentageDonProjetPretEnCours: Yup.number().min(0).max(100).required(),
+    pourcentageReserveHabitantPretEnCours: Yup.number().min(0).max(100).required(),
+    redevanceAcquisitivePretEnCours: Yup.number().min(0).required(),
+    pourcentageDonProjetPretTermine: Yup.number().min(0).max(100).required(),
+    pourcentageReserveHabitantPretTermine: Yup.number().min(0).max(100).required(),
+    redevanceAcquisitivePretTermine: Yup.number().min(0).required(),
   })
 
   // Export simulation to json
@@ -300,7 +314,7 @@ function App() {
           redevanceAcquisitivePretTermineParDefaut: redevanceAcquisitivePretTermineParDefaut
         }}
         enableReinitialize={true}
-        validationSchema={configurationSchema}
+        validationSchema={configurationSimulateurSchema}
         onSubmit={values => {
           // Save config
           setDureeSimulation(values.dureeSimulation)
@@ -331,28 +345,26 @@ function App() {
               <div className={"form-group col-md-1"}>
                 <label>Durée simulation (en année)</label>
                 <input
-                  className={'form-control'}
+                  className={(errors.dureeSimulation ? 'inputError' : '') + ' form-control'}
                   type="number"
                   name="dureeSimulation"
                   onChange={handleChange}
                   onBlur={handleSubmit}
                   value={values.dureeSimulation}
                 />
-                {errors.dureeSimulation && touched.dureeSimulation && errors.dureeSimulation}
               </div>
 
               {/* Duree Prêt */}
               <div className={"form-group col-md-1"}>
                 <label>Durée prêt (en année)</label>
                 <input
-                  className={'form-control'}
+                  className={(errors.dureeSimulation ? 'inputError' : '') + ' form-control'}
                   type="number"
                   name="dureeSimulation"
                   onChange={handleChange}
                   onBlur={handleSubmit}
                   value={values.dureePret}
                 />
-                {errors.dureePret && touched.dureePret && errors.dureePret}
               </div>
 
               {/* Ajout habitant */}
@@ -392,98 +404,91 @@ function App() {
               <div className={"form-group col-md-1"}>
                 <label className={'labelInputDefaultValueHabitant'}>CCA Initial</label>
                 <input
-                  className={'form-control'}
+                  className={(errors.ccaInitialParDefaut ? 'inputError' : '') + ' form-control'}
                   type="number"
                   name="ccaInitialParDefaut"
                   onChange={handleChange}
                   onBlur={handleSubmit}
                   value={values.ccaInitialParDefaut}
                 />
-                {errors.ccaInitialParDefaut && touched.ccaInitialParDefaut && errors.ccaInitialParDefaut}
               </div>
 
               {/* Pourcentage don au projet prêt en cours */}
               <div className={"form-group col-md-1"}>
                 <label className={'labelInputDefaultValueHabitant'}>Pourcentage don au projet prêt en cours</label>
                 <input
-                  className={'form-control'}
+                  className={(errors.pourcentageDonProjetPretEnCoursParDefaut ? 'inputError' : '') + ' form-control'}
                   type="number"
                   name="pourcentageDonProjetPretEnCoursParDefaut"
                   onChange={handleChange}
                   onBlur={handleSubmit}
                   value={values.pourcentageDonProjetPretEnCoursParDefaut}
                 />
-                {errors.pourcentageDonProjetPretEnCoursParDefaut && touched.pourcentageDonProjetPretEnCoursParDefaut && errors.pourcentageDonProjetPretEnCoursParDefaut}
               </div>
 
               {/* Pourcentage réserve habitant prêt en cours */}
               <div className={"form-group col-md-1"}>
                 <label className={'labelInputDefaultValueHabitant'}>Pourcentage réserve habitant prêt en cours</label>
                 <input
-                  className={'form-control'}
+                  className={(errors.pourcentageReserveHabitantPretEnCoursParDefaut ? 'inputError' : '') + ' form-control'}
                   type="number"
                   name="pourcentageReserveHabitantPretEnCoursParDefaut"
                   onChange={handleChange}
                   onBlur={handleSubmit}
                   value={values.pourcentageReserveHabitantPretEnCoursParDefaut}
                 />
-                {errors.pourcentageReserveHabitantPretEnCoursParDefaut && touched.pourcentageReserveHabitantPretEnCoursParDefaut && errors.pourcentageReserveHabitantPretEnCoursParDefaut}
               </div>
 
               {/* Redevance acquisitive prêt en cours */}
               <div className={"form-group col-md-1"}>
                 <label className={'labelInputDefaultValueHabitant'}>Redevance acquisitive prêt en cours</label>
                 <input
-                  className={'form-control'}
+                  className={(errors.redevanceAcquisitivePretEnCoursParDefaut ? 'inputError' : '') + ' form-control'}
                   type="number"
                   name="redevanceAcquisitivePretEnCoursParDefaut"
                   onChange={handleChange}
                   onBlur={handleSubmit}
                   value={values.redevanceAcquisitivePretEnCoursParDefaut}
                 />
-                {errors.redevanceAcquisitivePretEnCoursParDefaut && touched.redevanceAcquisitivePretEnCoursParDefaut && errors.redevanceAcquisitivePretEnCoursParDefaut}
               </div>
 
               {/* Pourcentage don au projet prêt terminé */}
               <div className={"form-group col-md-1"}>
                 <label className={'labelInputDefaultValueHabitant'}>Pourcentage don au projet prêt terminé</label>
                 <input
-                  className={'form-control'}
+                  className={(errors.pourcentageDonProjetPretTermineParDefaut ? 'inputError' : '') + ' form-control'}
                   type="number"
                   name="pourcentageDonProjetPretTermineParDefaut"
                   onChange={handleChange}
                   onBlur={handleSubmit}
                   value={values.pourcentageDonProjetPretTermineParDefaut}
                 />
-                {errors.pourcentageDonProjetPretTermineParDefaut && touched.pourcentageDonProjetPretTermineParDefaut && errors.pourcentageDonProjetPretTermineParDefaut}
               </div>
 
               {/* Pourcentage réserve habitant prêt terminé */}
               <div className={"form-group col-md-1"}>
                 <label className={'labelInputDefaultValueHabitant'}>Pourcentage réserve habitant prêt terminé</label>
                 <input
-                  className={'form-control'}
+                  className={(errors.pourcentageReserveHabitantPretTermineParDefaut ? 'inputError' : '') + ' form-control'}
                   type="number"
                   name="pourcentageReserveHabitantPretTermineParDefaut"
                   onChange={handleChange}
                   onBlur={handleSubmit}
                   value={values.pourcentageReserveHabitantPretTermineParDefaut}
                 />
-                {errors.pourcentageReserveHabitantPretTermineParDefaut && touched.pourcentageReserveHabitantPretTermineParDefaut && errors.pourcentageReserveHabitantPretTermineParDefaut}
               </div>
 
               {/* Redevance acquisitive prêt terminé */}
               <div className={"form-group col-md-1"}>
                 <label className={'labelInputDefaultValueHabitant'}>Redevance acquisitive prêt terminé</label>
                 <input
-                  className={'form-control'}
+                  className={(errors.redevanceAcquisitivePretTermineParDefaut ? 'inputError' : '') + ' form-control'}
                   type="number"
                   name="redevanceAcquisitivePretTermineParDefaut"
                   onChange={handleChange}
                   onBlur={handleSubmit}
                   value={values.redevanceAcquisitivePretTermineParDefaut}
                 />
-                {errors.redevanceAcquisitivePretTermineParDefaut && touched.redevanceAcquisitivePretTermineParDefaut && errors.redevanceAcquisitivePretTermineParDefaut}
               </div>
 
             </fieldset>
@@ -539,6 +544,7 @@ function App() {
             <Formik
               key={habitant.id}
               initialValues={habitant}
+              validationSchema={configurationHabitantSchema}
               onSubmit={habitantModifier => {
                 setEtatInitialHabitants(produce(etatInitialHabitants, draft => {
                   let habitantIndex = etatInitialHabitants.findIndex(habitant => habitant.id === habitantModifier.id)
@@ -554,10 +560,11 @@ function App() {
                 handleSubmit
               }) => (
                 <tr>
+                  {console.log(values)}
                   <th>{habitant.id}</th>
                   <th className={'stickyColumn firstColumn'}>
                     <input
-                      className={'form-control tableInlineInput tableInlineInputNom'}
+                      className={(errors.nom ? 'inputError' : '') + ' form-control tableInlineInput tableInlineInputNom'}
                       type={'string'}
                       value={values.nom}
                       name={'nom'}
@@ -567,7 +574,7 @@ function App() {
                   </th>
                   <th>
                     <input
-                      className={'form-control tableInlineInput'}
+                      className={(errors.anneeEntree ? 'inputError' : '') + ' form-control tableInlineInput'}
                       type={'number'}
                       value={values.anneeEntree}
                       name={'anneeEntree'}
@@ -577,17 +584,18 @@ function App() {
                   </th>
                   <th>
                     <input
-                      className={'form-control tableInlineInput'}
+                      className={(errors.anneeSortie ? 'inputError' : '') + ' form-control tableInlineInput'}
                       type={'number'}
                       value={values.anneeSortie}
                       name={'anneeSortie'}
                       onChange={handleChange}
                       onBlur={handleSubmit}
                     />
+                    {errors.anneeSortie}
                   </th>
                   <th>
                     <input
-                      className={'form-control tableInlineInput'}
+                      className={(errors.cca ? 'inputError' : '') + ' form-control tableInlineInput'}
                       type={'number'}
                       value={values.cca}
                       name={'cca'}
@@ -597,7 +605,7 @@ function App() {
                   </th>
                   <th>
                     <input
-                      className={'form-control tableInlineInput'}
+                      className={(errors.pourcentageDonProjetPretEnCours ? 'inputError' : '') + ' form-control tableInlineInput'}
                       type={'number'}
                       value={values.pourcentageDonProjetPretEnCours}
                       name={'pourcentageDonProjetPretEnCours'}
@@ -607,7 +615,7 @@ function App() {
                   </th>
                   <th>
                     <input
-                      className={'form-control tableInlineInput'}
+                      className={(errors.pourcentageReserveHabitantPretEnCours ? 'inputError' : '') + ' form-control tableInlineInput'}
                       type={'number'}
                       value={values.pourcentageReserveHabitantPretEnCours}
                       name={'pourcentageReserveHabitantPretEnCours'}
@@ -617,7 +625,7 @@ function App() {
                   </th>
                   <th>
                     <input
-                      className={'form-control tableInlineInput'}
+                      className={(errors.redevanceAcquisitivePretEnCours ? 'inputError' : '') + ' form-control tableInlineInput'}
                       type={'number'}
                       value={values.redevanceAcquisitivePretEnCours}
                       name={'redevanceAcquisitivePretEnCours'}
@@ -627,7 +635,7 @@ function App() {
                   </th>
                   <th>
                     <input
-                      className={'form-control tableInlineInput'}
+                      className={(errors.pourcentageDonProjetPretTermine ? 'inputError' : '') + ' form-control tableInlineInput'}
                       type={'number'}
                       value={values.pourcentageDonProjetPretTermine}
                       name={'pourcentageDonProjetPretTermine'}
@@ -637,7 +645,7 @@ function App() {
                   </th>
                   <th>
                     <input
-                      className={'form-control tableInlineInput'}
+                      className={(errors.pourcentageReserveHabitantPretTermine ? 'inputError' : '') + ' form-control tableInlineInput'}
                       type={'number'}
                       value={values.pourcentageReserveHabitantPretTermine}
                       name={'pourcentageReserveHabitantPretTermine'}
@@ -647,7 +655,7 @@ function App() {
                   </th>
                   <th>
                     <input
-                      className={'form-control tableInlineInput'}
+                      className={(errors.redevanceAcquisitivePretTermine ? 'inputError' : '') + ' form-control tableInlineInput'}
                       type={'number'}
                       value={values.redevanceAcquisitivePretTermine}
                       name={'redevanceAcquisitivePretTermine'}

@@ -60,3 +60,7 @@
 .labelInputDefaultValueHabitant {
   height: 70px;
 }
+
+.inputError {
+  border-color: red;
+}
