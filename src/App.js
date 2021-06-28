@@ -76,7 +76,7 @@ function App() {
           })
           habitant.cca = montantAnneePrecedenteCCA + montantAcquisCetteAnneeEnCCA
 
-          // Simulation ajout montant reserve habitant
+          // Simulation ajout montant reserve habitant (une fois le prêt terminée, l'ensemble de la redevance acquisitive va à la réserve habitant)
           let pourcentageReserveHabitants = annee <= dureePret ? habitant.pourcentageReserveHabitantPretEnCours : habitant.pourcentageReserveHabitantPretTermine
           let montantAjouterCetteAnneeParCetHabitant = montantPreterCetteAnnee * pourcentageReserveHabitants / 100;
           montantAjouterCetteAnneeEnveloppeHabitant += montantAjouterCetteAnneeParCetHabitant
@@ -458,7 +458,7 @@ function App() {
 
               {/* Duree Prêt */}
               <div className={"form-group col-md-1"}>
-                <label>Durée prêt (en année)</label>
+                <label>Durée prêt et durée prix de revient (en année)</label>
                 <input
                   className={(errors.dureeSimulation ? 'inputError' : '') + ' form-control'}
                   type="number"
@@ -511,7 +511,7 @@ function App() {
 
               {/* CCA Initial */}
               <div className={"form-group col-md-1"}>
-                <label className={'labelInputDefaultValueHabitant'}>CCA Initial</label>
+                <label className={'labelInputDefaultValueHabitant'}>Compte-Courant d'Associé (CCA) Initial</label>
                 <input
                   className={(errors.ccaInitialParDefaut ? 'inputError' : '') + ' form-control'}
                   type="number"
@@ -522,9 +522,9 @@ function App() {
                 />
               </div>
 
-              {/* Pourcentage don au projet prêt en cours */}
+              {/* Pourcentage don au projet prix de revient (PDR) non atteint */}
               <div className={"form-group col-md-1"}>
-                <label className={'labelInputDefaultValueHabitant'}>Pourcentage don au projet prêt en cours</label>
+                <label className={'labelInputDefaultValueHabitant'}>Pourcentage don au projet prix de revient (PDR) non atteint</label>
                 <input
                   className={(errors.pourcentageDonProjetPretEnCoursParDefaut ? 'inputError' : '') + ' form-control'}
                   type="number"
@@ -535,9 +535,9 @@ function App() {
                 />
               </div>
 
-              {/* Pourcentage réserve habitant prêt en cours */}
+              {/* Pourcentage réserve habitant prix de revient (PDR) non atteint */}
               <div className={"form-group col-md-1"}>
-                <label className={'labelInputDefaultValueHabitant'}>Pourcentage réserve habitant prêt en cours</label>
+                <label className={'labelInputDefaultValueHabitant'}>Pourcentage réserve habitant prix de revient (PDR) non atteint</label>
                 <input
                   className={(errors.pourcentageReserveHabitantPretEnCoursParDefaut ? 'inputError' : '') + ' form-control'}
                   type="number"
@@ -548,9 +548,9 @@ function App() {
                 />
               </div>
 
-              {/* Redevance acquisitive prêt en cours */}
+              {/* Redevance acquisitive prix de revient (PDR) non atteint */}
               <div className={"form-group col-md-1"}>
-                <label className={'labelInputDefaultValueHabitant'}>Redevance acquisitive prêt en cours</label>
+                <label className={'labelInputDefaultValueHabitant'}>Redevance acquisitive prix de revient (PDR) non atteint</label>
                 <input
                   className={(errors.redevanceAcquisitivePretEnCoursParDefaut ? 'inputError' : '') + ' form-control'}
                   type="number"
@@ -561,9 +561,9 @@ function App() {
                 />
               </div>
 
-              {/* Pourcentage don au projet prêt terminé */}
+              {/* Pourcentage don au projet prix de revient (PDR) atteint */}
               <div className={"form-group col-md-1"}>
-                <label className={'labelInputDefaultValueHabitant'}>Pourcentage don au projet prêt terminé</label>
+                <label className={'labelInputDefaultValueHabitant'}>Pourcentage don au projet prix de revient (PDR) atteint</label>
                 <input
                   className={(errors.pourcentageDonProjetPretTermineParDefaut ? 'inputError' : '') + ' form-control'}
                   type="number"
@@ -575,7 +575,12 @@ function App() {
               </div>
 
               {/* Pourcentage réserve habitant prêt terminé */}
-              <div className={"form-group col-md-1"}>
+              {/*
+                  Est-ce qu'il existe des cas où après avoir remboursé le pret, ce n'est pas 100% de la redevance acquisitive
+                  qui va dans la réserve départs habitants ?
+                  Pour le moment je cache de l'affichage, la valeur reste donc 100% dans tout les cas (valeur par défaut)
+              */}
+              {/*<div className={"form-group col-md-1"}>
                 <label className={'labelInputDefaultValueHabitant'}>Pourcentage réserve habitant prêt terminé</label>
                 <input
                   className={(errors.pourcentageReserveHabitantPretTermineParDefaut ? 'inputError' : '') + ' form-control'}
@@ -585,11 +590,11 @@ function App() {
                   onBlur={handleSubmit}
                   value={values.pourcentageReserveHabitantPretTermineParDefaut}
                 />
-              </div>
+              </div>*/}
 
-              {/* Redevance acquisitive prêt terminé */}
+              {/* Redevance acquisitive prix de revient (PDR) atteint */}
               <div className={"form-group col-md-1"}>
-                <label className={'labelInputDefaultValueHabitant'}>Redevance acquisitive prêt terminé</label>
+                <label className={'labelInputDefaultValueHabitant'}>Redevance acquisitive prix de revient (PDR) atteint</label>
                 <input
                   className={(errors.redevanceAcquisitivePretTermineParDefaut ? 'inputError' : '') + ' form-control'}
                   type="number"
@@ -623,12 +628,12 @@ function App() {
             <th>Année entrée</th>
             <th>Année sortie</th>
             <th>CCA Initial</th>
-            <th>% don au projet durée prêt</th>
-            <th>% reserve habitants prêt en cours</th>
-            <th>Redevance acquisitive durée prêt</th>
-            <th>% don au projet durée prêt</th>
-            <th>% reserve habitants prêt terminé</th>
-            <th>Redevance acquisitive durée prêt</th>
+            <th>% don au projet PDR non atteint</th>
+            <th>% reserve habitants PDR non atteint</th>
+            <th>Redevance acquisitive PDR non atteint</th>
+            <th>% don au projet PDR atteint</th>
+            {/*<th>% reserve habitants prêt terminé</th>*/}
+            <th>Redevance acquisitive PDR atteint</th>
             {simulationReserveHabitants.map(simulationAnnee => (
               <th key={simulationAnnee.annee}>Montant</th>
             ))}
@@ -640,8 +645,8 @@ function App() {
 
           {/* Evolution enveloppe habitant */}
           <tr>
-            <th colSpan={2} className={'stickyColumn firstColumn'}>Enveloppe habitant</th>
-            <th colSpan={9}> </th>
+            <th colSpan={3} className={'stickyColumn firstColumn'}>Réserve départs habitants</th>
+            <th colSpan={8}> </th>
             {simulationReserveHabitants.map(simulationAnnee => (
               <td
                 key={simulationAnnee.annee}
@@ -763,7 +768,7 @@ function App() {
                       onBlur={handleSubmit}
                     />
                   </th>
-                  <th>
+                  {/*<th>
                     <input
                       className={(errors.pourcentageReserveHabitantPretTermine ? 'inputError' : '') + ' form-control tableInlineInput'}
                       type={'number'}
@@ -772,7 +777,7 @@ function App() {
                       onChange={handleChange}
                       onBlur={handleSubmit}
                     />
-                  </th>
+                  </th>*/}
                   <th>
                     <input
                       className={(errors.redevanceAcquisitivePretTermine ? 'inputError' : '') + ' form-control tableInlineInput'}
@@ -817,7 +822,7 @@ function App() {
             <div className="modal-dialog" role="document">
               <div className="modal-content">
                 <div className="modal-header">
-                  <h5 className="modal-title">Détail réserve habitant année {detailsAnneeReserveHabitant.annee}</h5>
+                  <h5 className="modal-title">Détail réserve départs habitants année {detailsAnneeReserveHabitant.annee}</h5>
                 </div>
                 <div className="modal-body modalEnveloppeHabitant">
                   <table>
