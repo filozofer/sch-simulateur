@@ -5,6 +5,8 @@ import { Formik } from 'formik'
 import * as Yup from 'yup'
 import produce from 'immer'
 import moment from 'moment'
+import { confirmAlert } from 'react-confirm-alert'
+import 'react-confirm-alert/src/react-confirm-alert.css'
 
 /**
  * Société Coopérative d'Habitants Simulator.
@@ -28,9 +30,12 @@ function App() {
   const [redevanceAcquisitivePretTermineParDefaut, setRedevanceAcquisitivePretTermineParDefaut] = useState(180)
 
   // Etat simulation
+  const [sauvegardeLocalStorageImportee, setSauvegardeLocalStorageImportee] = useState(false)
   const [etatInitialHabitants, setEtatInitialHabitants] = useState([])
-  let [simulationReserveHabitants, setSimulationReserveHabitants] = useState([])
-  let [simulationHabitants, setSimulationHabitants] = useState({})
+  const [simulationReserveHabitants, setSimulationReserveHabitants] = useState([])
+  const [simulationHabitants, setSimulationHabitants] = useState({})
+  const [montrerDetailsAnneeReserveHabitant, setMontrerDetailsAnneeReserveHabitant] = useState(null)
+  const detailsAnneeReserveHabitant = montrerDetailsAnneeReserveHabitant ? simulationReserveHabitants[montrerDetailsAnneeReserveHabitant-1] : null
 
   // Simulate !
   useEffect(() => {
@@ -134,12 +139,23 @@ function App() {
         habitant.cca = montantRestantARembourser - montantRembourseCetteAnnee - montantRembourseApportEntrant
         sHabitants[habitant.id].push({
           annee: annee,
-          difference: -montantRembourseCetteAnnee -montantRembourseApportEntrant,
+          difference: Math.ceil(-montantRembourseCetteAnnee -montantRembourseApportEntrant),
           cca: habitant.cca,
           sortie: true
         })
         montantRembourseCetteAnneeEnveloppeHabitant += montantRembourseCetteAnnee
-        historiqueEnveloppeHabitant.push({ nom: habitant.nom, difference: -montantRembourseCetteAnnee })
+        historiqueEnveloppeHabitant.push({ nom: habitant.nom, difference: Math.ceil(-montantRembourseCetteAnnee) })
+
+        // On note le nombre d'année nécessaire pour rembourser cet habitant dans les lignes de sorties
+        if(habitant.cca <= 0) {
+          let nbAnneeRemboursementSortie = sHabitants[habitant.id].filter(h => h.sortie === true).length
+          sHabitants[habitant.id] = sHabitants[habitant.id].map(historique => {
+            if(historique.sortie === true) {
+              historique.nbAnneeRemboursementSortie = nbAnneeRemboursementSortie
+            }
+            return historique
+          })
+        }
 
       })
 
@@ -147,10 +163,10 @@ function App() {
       let differenceReserveHabitantPourCetteAnnee = montantAjouterCetteAnneeEnveloppeHabitant - montantRembourseCetteAnneeEnveloppeHabitant
       sReserveHabitants.push({
         annee: annee,
-        ajout: montantAjouterCetteAnneeEnveloppeHabitant,
-        remboursement: montantRembourseCetteAnneeEnveloppeHabitant,
-        difference: differenceReserveHabitantPourCetteAnnee,
-        montant: montantEnveloppeHabitantAnneePrecedante + differenceReserveHabitantPourCetteAnnee,
+        ajout: Math.ceil(montantAjouterCetteAnneeEnveloppeHabitant),
+        remboursement: Math.ceil(montantRembourseCetteAnneeEnveloppeHabitant),
+        difference: Math.ceil(differenceReserveHabitantPourCetteAnnee),
+        montant: Math.ceil(montantEnveloppeHabitantAnneePrecedante + differenceReserveHabitantPourCetteAnnee),
         historique: historiqueEnveloppeHabitant
       })
 
@@ -169,6 +185,45 @@ function App() {
     dureePret,
     etatInitialHabitants
   ])
+
+  // Sauvegarde en local storage à chaque changement
+  useEffect(() => {
+    // Attente de la récupération depuis le local storage avant d'activer le système de sauvegarde
+    if(sauvegardeLocalStorageImportee === false) {
+      return
+    }
+    // Sauvegarde en local storage
+    localStorage.setItem('sch-simulator-save', JSON.stringify({
+      dureeSimulation: dureeSimulation,
+      dureePret: dureePret,
+      ccaInitialParDefaut: ccaInitialParDefaut,
+      pourcentageDonProjetPretEnCoursParDefaut: pourcentageDonProjetPretEnCoursParDefaut,
+      pourcentageReserveHabitantPretEnCoursParDefaut: pourcentageReserveHabitantPretEnCoursParDefaut,
+      redevanceAcquisitivePretEnCoursParDefaut: redevanceAcquisitivePretEnCoursParDefaut,
+      pourcentageDonProjetPretTermineParDefaut: pourcentageDonProjetPretTermineParDefaut,
+      pourcentageReserveHabitantPretTermineParDefaut: pourcentageReserveHabitantPretTermineParDefaut,
+      redevanceAcquisitivePretTermineParDefaut: redevanceAcquisitivePretTermineParDefaut,
+      etatInitialHabitants: etatInitialHabitants
+    }))
+  }, [
+    dureeSimulation,
+    dureePret,
+    ccaInitialParDefaut,
+    pourcentageDonProjetPretEnCoursParDefaut,
+    pourcentageReserveHabitantPretEnCoursParDefaut,
+    redevanceAcquisitivePretEnCoursParDefaut,
+    pourcentageDonProjetPretTermineParDefaut,
+    pourcentageReserveHabitantPretTermineParDefaut,
+    redevanceAcquisitivePretTermineParDefaut,
+    etatInitialHabitants
+  ])
+  // Import depuis le local storage à chaque chargement du simulateur
+  useEffect(() => {
+    let saveFromLocalStorage = localStorage.getItem('sch-simulator-save')
+    saveFromLocalStorage = saveFromLocalStorage ? JSON.parse(saveFromLocalStorage) : null
+    _importFromObject(saveFromLocalStorage)
+    setSauvegardeLocalStorageImportee(true)
+  }, [])
 
   // Ajouter un nouvel habitant
   const _ajouterNouveauHabitant = () => {
@@ -189,6 +244,25 @@ function App() {
         reliquatSortie: null
       })
     }))
+  }
+
+  // Supprimer un habitant du simulateur
+  const _supprimerHabitant = (habitantId) => {
+    confirmAlert({
+      title: 'Confirmation',
+      message: 'Êtes vous sure de vouloir supprimer cet habitant du simulateur ?',
+      buttons: [
+        {
+          label: 'Oui',
+          onClick: () => {
+            setEtatInitialHabitants(etatInitialHabitants.filter(habitant => habitant.id !== habitantId))
+          }
+        },
+        {
+          label: 'Annuler'
+        }
+      ]
+    });
   }
 
   // Schéma de validation pour les configurations du simulateur
@@ -257,36 +331,7 @@ function App() {
 
       // Import config
       const importedFile = JSON.parse(evt.target.result)
-      if(importedFile['dureeSimulation']) {
-        setDureeSimulation(importedFile['dureeSimulation'])
-      }
-      if(importedFile['dureePret']) {
-        setDureePret(importedFile['dureePret'])
-      }
-      if(importedFile['ccaInitialParDefaut']) {
-        setCcaInitialParDefaut(importedFile['ccaInitialParDefaut'])
-      }
-      if(importedFile['pourcentageDonProjetPretEnCoursParDefaut']) {
-        setPourcentageDonProjetPretEnCoursParDefaut(importedFile['pourcentageDonProjetPretEnCoursParDefaut'])
-      }
-      if(importedFile['pourcentageReserveHabitantPretEnCoursParDefaut']) {
-        setPourcentageReserveHabitantPretEnCoursParDefaut(importedFile['pourcentageReserveHabitantPretEnCoursParDefaut'])
-      }
-      if(importedFile['redevanceAcquisitivePretEnCoursParDefaut']) {
-        setRedevanceAcquisitivePretEnCoursParDefaut(importedFile['redevanceAcquisitivePretEnCoursParDefaut'])
-      }
-      if(importedFile['pourcentageDonProjetPretTermineParDefaut']) {
-        setPourcentageDonProjetPretTermineParDefaut(importedFile['pourcentageDonProjetPretTermineParDefaut'])
-      }
-      if(importedFile['pourcentageReserveHabitantPretTermineParDefaut']) {
-        setPourcentageReserveHabitantPretTermineParDefaut(importedFile['pourcentageReserveHabitantPretTermineParDefaut'])
-      }
-      if(importedFile['redevanceAcquisitivePretTermineParDefaut']) {
-        setRedevanceAcquisitivePretTermineParDefaut(importedFile['redevanceAcquisitivePretTermineParDefaut'])
-      }
-      if(importedFile['etatInitialHabitants']) {
-        setEtatInitialHabitants(importedFile['etatInitialHabitants'])
-      }
+      _importFromObject(importedFile)
 
     }
     reader.onerror = function (evt) {
@@ -294,13 +339,70 @@ function App() {
     }
   }
 
+  // Import configurations from js object (use both for import from json and from local storage)
+  const _importFromObject = (data) => {
+    if(!data) {
+      return
+    }
+    if(data['dureeSimulation']) {
+      setDureeSimulation(data['dureeSimulation'])
+    }
+    if(data['dureePret']) {
+      setDureePret(data['dureePret'])
+    }
+    if(data['ccaInitialParDefaut']) {
+      setCcaInitialParDefaut(data['ccaInitialParDefaut'])
+    }
+    if(data['pourcentageDonProjetPretEnCoursParDefaut']) {
+      setPourcentageDonProjetPretEnCoursParDefaut(data['pourcentageDonProjetPretEnCoursParDefaut'])
+    }
+    if(data['pourcentageReserveHabitantPretEnCoursParDefaut']) {
+      setPourcentageReserveHabitantPretEnCoursParDefaut(data['pourcentageReserveHabitantPretEnCoursParDefaut'])
+    }
+    if(data['redevanceAcquisitivePretEnCoursParDefaut']) {
+      setRedevanceAcquisitivePretEnCoursParDefaut(data['redevanceAcquisitivePretEnCoursParDefaut'])
+    }
+    if(data['pourcentageDonProjetPretTermineParDefaut']) {
+      setPourcentageDonProjetPretTermineParDefaut(data['pourcentageDonProjetPretTermineParDefaut'])
+    }
+    if(data['pourcentageReserveHabitantPretTermineParDefaut']) {
+      setPourcentageReserveHabitantPretTermineParDefaut(data['pourcentageReserveHabitantPretTermineParDefaut'])
+    }
+    if(data['redevanceAcquisitivePretTermineParDefaut']) {
+      setRedevanceAcquisitivePretTermineParDefaut(data['redevanceAcquisitivePretTermineParDefaut'])
+    }
+    if(data['etatInitialHabitants']) {
+      setEtatInitialHabitants(data['etatInitialHabitants'])
+    }
+  }
+
+  // Re-initialiser le simulateur
+  const _resetSimulateur = () => {
+    confirmAlert({
+      title: 'Confirmation',
+      message: 'Êtes vous sure de vouloir réinitialiser le simulateur ?',
+      buttons: [
+        {
+          label: 'Oui',
+          onClick: () => {
+            localStorage.removeItem('sch-simulator-save')
+            window.location.reload()
+          }
+        },
+        {
+          label: 'Annuler'
+        }
+      ]
+    });
+  }
+
   return (
     <div className="App">
 
-      {/* Title */}
+      {/* Titre */}
       <h1>Simulateur d'évolution des créances Coopérative d'Habitant</h1>
 
-      {/* Config form */}
+      {/* Formulaire de configuration */}
       <Formik
         initialValues={{
           dureeSimulation: dureeSimulation,
@@ -377,14 +479,14 @@ function App() {
               {/* Export simulation */}
               <div className={"form-group col-md-1"}>
                 <button type="button" onClick={_exportSimulation}>
-                  Exporter simulation
+                  Sauvegarder simulation
                 </button>
               </div>
 
               {/* Import simulation */}
               <div className={"form-group col-md-1"}>
                 <button type="button" onClick={() => hiddenFileImportInputRef.current.click() }>
-                  Importer simulation
+                  Restaurer une simulation
                 </button>
                 <input
                   style={{display: 'none'}}
@@ -392,6 +494,13 @@ function App() {
                   type={'file'}
                   onChange={_importSimulation}
                 />
+              </div>
+
+              {/* Re-initialiser le simulateur */}
+              <div className={"form-group col-md-1"}>
+                <button type="button" onClick={_resetSimulateur}>
+                  Re-initialiser le simulateur
+                </button>
               </div>
 
             </fieldset>
@@ -497,6 +606,7 @@ function App() {
         )}
       </Formik>
 
+      {/* Liste des habitants et de la réserve habitant */}
       <table className={'table'}>
 
         {/* Entetes tableau */}
@@ -504,7 +614,7 @@ function App() {
           <tr>
             <th colSpan={11}> </th>
             {simulationReserveHabitants.map(simulationAnnee => (
-              <th key={simulationAnnee.annee}>Année {simulationAnnee.annee}</th>
+              <th key={simulationAnnee.annee} className={'yearColumn'}>Année {simulationAnnee.annee}</th>
             ))}
           </tr>
           <tr>
@@ -533,7 +643,11 @@ function App() {
             <th colSpan={2} className={'stickyColumn firstColumn'}>Enveloppe habitant</th>
             <th colSpan={9}> </th>
             {simulationReserveHabitants.map(simulationAnnee => (
-              <td key={simulationAnnee.annee}>
+              <td
+                key={simulationAnnee.annee}
+                className={'clickable'}
+                onClick={() => setMontrerDetailsAnneeReserveHabitant(simulationAnnee.annee)}
+              >
                 {Math.ceil(simulationAnnee.montant)}
               </td>
             ))}
@@ -560,8 +674,14 @@ function App() {
                 handleSubmit
               }) => (
                 <tr>
-                  {console.log(values)}
-                  <th>{habitant.id}</th>
+                  <th>
+                    <div className={'actionColumn'}>
+                      <i
+                        className="bi bi-trash deleteHabitantIcon"
+                        onClick={() => _supprimerHabitant(habitant.id)}
+                      > </i>
+                    </div>
+                  </th>
                   <th className={'stickyColumn firstColumn'}>
                     <input
                       className={(errors.nom ? 'inputError' : '') + ' form-control tableInlineInput tableInlineInputNom'}
@@ -672,6 +792,10 @@ function App() {
                       <td
                         key={simulationAnnee.annee}
                         style={simulationHabitant.sortie && { color: 'green' }}
+                        title={
+                          'Différence : ' + (simulationHabitant.difference > 0 ? '+' : '') + simulationHabitant.difference + ' €'
+                          + (simulationHabitant.nbAnneeRemboursementSortie ? ' | Temps de remboursement : ' + simulationHabitant.nbAnneeRemboursementSortie + ' ans' : '')
+                        }
                       >
                         {Math.ceil(simulationHabitant.cca)}
                       </td>
@@ -685,6 +809,46 @@ function App() {
         </tbody>
 
       </table>
+
+      {/* Modal de détail pour une année de l'évolution de la réserve habitant */}
+      {detailsAnneeReserveHabitant && (
+        <div className={'blackBackground'}>
+          <div className="modalShow modal" tabIndex="-1" role="dialog">
+            <div className="modal-dialog" role="document">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Détail réserve habitant année {detailsAnneeReserveHabitant.annee}</h5>
+                </div>
+                <div className="modal-body modalEnveloppeHabitant">
+                  <table>
+                    <tr><th>Année : </th><td className={'enveloppeHabitantRow'}>{detailsAnneeReserveHabitant.annee}</td></tr>
+                    <tr><th>Ajout : </th><td className={'enveloppeHabitantRow'}>{detailsAnneeReserveHabitant.ajout} €</td></tr>
+                    <tr><th>Remboursement : </th><td className={'enveloppeHabitantRow'}>{detailsAnneeReserveHabitant.remboursement} €</td></tr>
+                    <tr><th>Différence : </th><td className={'enveloppeHabitantRow'}>{detailsAnneeReserveHabitant.difference} €</td></tr>
+                    <tr><th>Montant à la fin d'année : </th><td className={'enveloppeHabitantRow'}>{detailsAnneeReserveHabitant.montant} €</td></tr>
+                  </table>
+                  <div className={'bold'}>Historique : </div>
+                  <ul>
+                    {detailsAnneeReserveHabitant.historique.map(historique => (
+                      <li>{historique.nom} : {(historique.difference > 0 ? '+' : '') + historique.difference + ' €'}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setMontrerDetailsAnneeReserveHabitant(null)}
+                  >
+                    Fermer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
