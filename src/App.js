@@ -617,7 +617,7 @@ function App() {
         {/* Entetes tableau */}
         <thead>
           <tr>
-            <th colSpan={11}> </th>
+            <th colSpan={10}> </th>
             {simulationReserveHabitants.map(simulationAnnee => (
               <th key={simulationAnnee.annee} className={'yearColumn'}>Année {simulationAnnee.annee}</th>
             ))}
@@ -646,7 +646,7 @@ function App() {
           {/* Evolution enveloppe habitant */}
           <tr>
             <th colSpan={3} className={'stickyColumn firstColumn'}>Réserve départs habitants</th>
-            <th colSpan={8}> </th>
+            <th colSpan={7}> </th>
             {simulationReserveHabitants.map(simulationAnnee => (
               <td
                 key={simulationAnnee.annee}
