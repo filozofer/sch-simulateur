@@ -53,14 +53,16 @@ function App() {
       let montantAjouterCetteAnneeEnveloppeHabitant = 0
       let historiqueEnveloppeHabitant = []
 
+      // Initialisation tableau habitant
+      habitants.forEach(habitant => {
+        if(sHabitants[habitant.id] === undefined) {
+          sHabitants[habitant.id] = []
+        }
+      })
+
       // Pour chaque habitant encore présent cette année là
       habitants.filter(habitant => habitant.anneeEntree <= annee && (habitant.anneeSortie === null || habitant.anneeSortie > annee))
         .forEach(habitant => {
-
-          // Initialisation tableau pour cette habitant
-          if(sHabitants[habitant.id] === undefined) {
-            sHabitants[habitant.id] = []
-          }
 
           // Simulation ajout montant en CCA
           habitant.anneeEntree = habitant.anneeEntree ? habitant.anneeEntree : 0
@@ -667,6 +669,7 @@ function App() {
               onSubmit={habitantModifier => {
                 setEtatInitialHabitants(produce(etatInitialHabitants, draft => {
                   let habitantIndex = etatInitialHabitants.findIndex(habitant => habitant.id === habitantModifier.id)
+                  habitantModifier.anneeSortie = habitantModifier.anneeSortie ? habitantModifier.anneeSortie : null
                   draft[habitantIndex] = habitantModifier
                 }))
               }}
